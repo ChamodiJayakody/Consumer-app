@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import { COLORS } from '../theme/colors';
+import { FONTS } from '../theme/fonts';
 import {
   View,
   Text,
@@ -21,6 +22,11 @@ const LoginScreen = ({navigation}) => {
     email: '',
     password: ''
   });
+
+//   useEffect(() => {
+//   // Add any side effects here
+//   console.log('test');
+// }, []);
 
   const validateForm = () => {
     const newErrors = {
@@ -55,7 +61,7 @@ const LoginScreen = ({navigation}) => {
     if (validateForm()) {
       // Proceed with login
       console.log('Login successful');
-      navigation.replace('Home',{ userName: email.split('@')[0] });
+      navigation.replace('MainApp', { userName: email.split('@')[0] });
     }
   };
 
@@ -65,7 +71,7 @@ const LoginScreen = ({navigation}) => {
 
       <View style={styles.content}>
         <Image
-          source={require('../logo.jpg')}
+          source={require('../assets/images/logo.jpg')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -115,7 +121,7 @@ const LoginScreen = ({navigation}) => {
           <Text style={styles.errorText}>{errorMessages.password}</Text>
         )}
         <TouchableOpacity style={styles.forgotPassword}>
-          <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+          <Text style={styles.forgotPasswordText}>Forgot password ?</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -155,15 +161,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: FONTS.title,
     textAlign: 'center',
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 24,
     color: COLORS.text.primary,
-    lineHeight: 30,
+    lineHeight: 35,
   },
   description: {
-    fontFamily: 'inter',
+    fontFamily: FONTS.description,
     fontSize: 14,
     color: COLORS.text.secondary,
     lineHeight: 20,
@@ -182,15 +187,18 @@ const styles = StyleSheet.create({
     marginTop: -15,
     marginBottom: 10,
     marginLeft: 15,
+    fontFamily: FONTS.description,
   },
   input: {
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.border,
-    padding: 15,
+    padding: 10,
     marginBottom: 20,
     borderRadius: 100,
     fontSize: 16,
+    fontFamily: FONTS.placeholder,
+    color: COLORS.text.primary,
   },
   inputError: {
     borderWidth: 1.5,
@@ -201,8 +209,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   forgotPasswordText: {
-    fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
+    fontFamily: FONTS.forgotpassword,
   },
   loginButton: {
     backgroundColor: COLORS.background.primary,
@@ -213,7 +221,7 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.buttontext,
   },
 });
 

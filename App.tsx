@@ -7,6 +7,11 @@ import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import { COLORS } from './src/theme/colors';
+import {FONTS} from './src/theme/fonts';
+import TabNavigator from './src/navigation/TabNavigator';
+import { Provider } from 'react-redux';
+import { store } from './src/redux/store';
+import BrandPromotionsScreen from './src/screens/BrandPromotionsScreen';
 
 const Stack = createStackNavigator();
 
@@ -15,7 +20,7 @@ const WelcomeScreen = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.content}>
         <Image
-          source={require('./src/logo.jpg')}
+          source={require('./src/assets/images/logo.jpg')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -49,14 +54,16 @@ const WelcomeScreen = ({ navigation }) => {
 
 const App = () => {
   return (
+    <Provider store={store}>
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="MainApp" component={TabNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
+    </Provider>
     );
 };
 
@@ -83,15 +90,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: FONTS.title,
     textAlign: 'center',
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 24,
+    //fontWeight: 'bold',
     color: COLORS.text.primary,
     lineHeight: 30,
   },
   description: {
-    fontFamily: 'inter',
+    fontFamily: FONTS.description,
     fontSize: 14,
     color: COLORS.text.secondary,
     lineHeight: 20,
@@ -112,10 +119,10 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   logInButtonText: {
-    fontFamily: 'inter',
+    fontFamily: FONTS.buttontext,
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    //fontWeight: 'bold',
   },
   createAccountButton: {
     backgroundColor: COLORS.white,
@@ -126,10 +133,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   createAccountButtonText: {
-    fontFamily: 'inter',
+    fontFamily: FONTS.buttontext,
     fontSize: 16,
     color: COLORS.text.primary,
-    fontWeight: 'bold',
   },
 });
 

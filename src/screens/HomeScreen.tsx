@@ -1,62 +1,60 @@
-import React from 'react';
-import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
-//import * as React from 'react';
-import {Avatar, Provider as PaperProvider} from 'react-native-paper';
-import {Searchbar} from 'react-native-paper';
-import {IconButton, MD3Colors} from 'react-native-paper';
+import React, {useMemo} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
+import {Avatar} from 'react-native-paper';
 import {Card} from 'react-native-paper';
 import {FlatList} from 'react-native';
-import {BottomNavigation} from 'react-native-paper';
-import { COLORS } from '../theme/colors';
+import {COLORS} from '../theme/colors';
+import {FONTS} from '../theme/fonts';
+import {ScrollView} from 'react-native-gesture-handler';
+import Icon from 'react-native-vector-icons/Feather';
+import FilterModal from '../components/FilterModal';
+import {useSelector, useDispatch} from 'react-redux';
+import {useNavigation} from '@react-navigation/native';
+import {RootState} from '../redux/store';
+import {setSelectedManufacturer} from '../redux/manufacturersSlice';
 
-const HomeScreen = ({route, navigation}) => {
+const HomeScreen = ({route}) => {
   const userName = route.params?.userName || 'User Name';
   const [searchQuery, setSearchQuery] = React.useState('');
-  const cardsData = [
-    {id: '1', image: require('../card1.png')},
-    {id: '2', image: require('../card2.png')},
-  ];
-  const gridCardsData = [
-    {id: '7', image: require('../card7.png'), title: 'AXE'},
-    {id: '8', image: require('../card8.png'), title: 'Marmite'},
-    {id: '9', image: require('../card9.png'), title: 'Vasline'},
-    {id: '10', image: require('../card10.png'), title: 'Lux'},
-    {id: '3', image: require('../card3.png'), title: 'Baby Cheramy'},
-    {id: '4', image: require('../card4.png'), title: 'Atlas Axillia'},
-    {id: '5', image: require('../card5.png'), title: 'Morisons'},
-    {id: '6', image: require('../card6.png'), title: 'Clogard'},
-  ];
+  const [favorites, setFavorites] = React.useState({});
+  const [isFilterVisible, setFilterVisible] = React.useState(false);
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const {selectedManufacturer, gridCards, cardsData} = useSelector(
+    (state: RootState) => state.manufacturers,
+  );
 
-  const MusicRoute = () => <Text>Music</Text>;
+  const handleManufacturerSelect = (manufacturerId: string) => {
+    dispatch(setSelectedManufacturer(manufacturerId));
+    toggleFilter();
+  };
 
-  const AlbumsRoute = () => <Text>Albums</Text>;
+  const filteredCardsData = useMemo(
+    () =>
+      selectedManufacturer
+        ? cardsData.filter(card => card.manufacturerId === selectedManufacturer)
+        : cardsData,
+    [selectedManufacturer, cardsData],
+  );
 
-  const RecentsRoute = () => <Text>Recents</Text>;
+  const filteredGridCards = useMemo(
+    () =>
+      selectedManufacturer
+        ? gridCards.filter(card => card.manufacturerId === selectedManufacturer)
+        : gridCards,
+    [selectedManufacturer, gridCards],
+  );
 
-  const NotificationsRoute = () => <Text>Notifications</Text>;
-
-  const [index, setIndex] = React.useState(0);
-  const [routes] = React.useState([
-    {
-      key: 'music',
-      focusedIcon: 'heart',
-      unfocusedIcon: 'heart-outline',
-    },
-    {key: 'albums', focusedIcon: 'album'},
-    {key: 'recents', focusedIcon: 'history'},
-    {
-      key: 'notifications',
-      focusedIcon: 'bell',
-      unfocusedIcon: 'bell-outline',
-    },
-  ]);
-
-  const renderScene = BottomNavigation.SceneMap({
-    music: MusicRoute,
-    albums: AlbumsRoute,
-    recents: RecentsRoute,
-    notifications: NotificationsRoute,
-  });
+  const toggleFilter = () => {
+    setFilterVisible(!isFilterVisible);
+  };
 
   const getInitials = name => {
     return name
@@ -67,50 +65,80 @@ const HomeScreen = ({route, navigation}) => {
       .slice(0, 2);
   };
 
+  const toggleFavorite = id => {
+    setFavorites(prev => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  //  useEffect(() => {
+  //   // Add any side effects here
+  //   console.log('test');
+  // }, []);
+
+  const userAvatar = require('../assets/images/avatar.png');
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <View
           style={{
-            flex: 0.08,
+            marginVertical: 20,
             flexDirection: 'row',
             justifyContent: 'space-between',
           }}>
           <View>
-            <Text style={[styles.description, {textAlign: 'left'}]}>
-              Hello!
-            </Text>
-            <Text style={styles.title}>{userName}</Text>
+            <Text style={[styles.hello, {textAlign: 'left'}]}>Hello</Text>
+            {/* <Text style={styles.name}>{userName}</Text> */}
+            <Text style={styles.name}>Johan Doe</Text>
           </View>
           <View style={{justifyContent: 'center'}}>
-            <Avatar.Text
-              size={44}
-              label={getInitials(userName)}
-              color="COLORS.white"
-              style={{backgroundColor: COLORS.background.primary}}
-            />
+            {userAvatar ? (
+              <Avatar.Image
+                size={50}
+                source={userAvatar}
+                style={{backgroundColor: COLORS.background.primary}}
+              />
+            ) : (
+              <Avatar.Text
+                size={50}
+                label={getInitials('Johan Doe')}
+                color={COLORS.white}
+                style={{backgroundColor: COLORS.background.primary}}
+              />
+            )}
           </View>
         </View>
 
         <View
           style={{
-            flex: 0.08,
+            marginBottom: 24,
             flexDirection: 'row',
             justifyContent: 'space-between',
           }}>
-          <View style={{flex: 0.9, justifyContent: 'center'}}>
-            <Searchbar
-              style={[styles.searchbar, {height: 40}]}
-              placeholder="Search..."
-              onChangeText={setSearchQuery}
-              value={searchQuery}
-              icon={'magnify'}
-            />
+          <View style={{flex: 0.925}}>
+            <View style={styles.searchContainer}>
+              <Icon
+                name="search"
+                size={28}
+                color={COLORS.navbaricons}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search..."
+                placeholderTextColor={COLORS.navbaricons}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
           </View>
-          <View style={{ justifyContent: 'center'}}>
+
+          <View style={{justifyContent: 'center'}}>
             <TouchableOpacity
               style={{
-                backgroundColor: COLORS.border,
+                backgroundColor: COLORS.filtericon,
                 borderRadius: 100,
                 padding: 8,
                 justifyContent: 'center',
@@ -118,84 +146,118 @@ const HomeScreen = ({route, navigation}) => {
                 height: 40,
                 width: 40,
               }}
-              onPress={() => console.log('Pressed')}>
+              onPress={toggleFilter}>
               <Image
-                source={require('../filter.png')} 
+                source={require('../assets/images/filter.png')}
                 style={{
                   width: 20,
                   height: 20,
-                  tintColor: COLORS.white, 
+                  tintColor: COLORS.white,
                 }}
                 resizeMode="contain"
               />
             </TouchableOpacity>
+
+            <FilterModal
+              isVisible={isFilterVisible}
+              onClose={toggleFilter}
+              //onSelectManufacturer={handleManufacturerSelect}
+            />
           </View>
         </View>
 
-        <View style={{flex: 0.3}}>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={cardsData}
-            keyExtractor={item => item.id}
-            renderItem={({item}) => (
-              <Card style={styles.card}>
-                <Card.Cover source={item.image} />
-              </Card>
-            )}
-          />
-        </View>
+        <ScrollView fadingEdgeLength={20} showsVerticalScrollIndicator={false}>
+          <View style={{}}>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={filteredCardsData}
+              keyExtractor={item => item.id}
+              snapToInterval={370 + 2} // card width + marginRight
+              decelerationRate="fast"
+              //snapToAlignment="center"
+              pagingEnabled={true}
+              renderItem={({item}) => (
+                <Card style={styles.card}>
+                  <Card.Cover source={item.image} />
+                </Card>
+              )}
+            />
+          </View>
 
-        <View style={{flex: 0.09, justifyContent: 'center'}}>
-          <Text
-            style={{
-              fontFamily: 'Poppins-Bold',
-              textAlign: 'left',
-              fontSize: 16,
-              fontWeight: 'bold',
-              color: COLORS.text.primary,
-            }}>
-            Ongoing Promotions in Unilever Brands
-          </Text>
-        </View>
+          <View style={{justifyContent: 'center'}}>
+            <Text
+              style={{
+                fontFamily: FONTS.title,
+                textAlign: 'left',
+                fontSize: 16,
+                marginVertical: 20,
+                color: COLORS.text.primary,
+              }}>
+              Ongoing Promotions in{' '}
+              {selectedManufacturer === '1'
+                ? 'Unilever'
+                : selectedManufacturer === '2'
+                ? 'Hemas'
+                : 'All'}{' '}
+              Brands
+            </Text>
+          </View>
 
-        <View style={{flex: 0.45}}>
           <FlatList
-            data={gridCardsData}
+            data={filteredGridCards}
             numColumns={2}
+            contentContainerStyle={{marginHorizontal: 5}}
             showsVerticalScrollIndicator={false}
             keyExtractor={item => item.id}
             columnWrapperStyle={styles.gridRow}
             renderItem={({item}) => (
-              <Card style={styles.gridCard}>
+              <TouchableOpacity
+                style={styles.gridCard}
+                onPress={() =>
+                  navigation.navigate('BrandPromotions', {
+                    brandId: item.id,
+                    brandTitle: item.title,
+                  })
+                }>
                 <Card.Cover source={item.image} style={styles.gridCardImage} />
-                <View style={styles.gridCardContent}>
-                  <Text style={styles.gridCardTitle}>{item.title}</Text>
-                  <TouchableOpacity
-                    style={styles.subtitleContainer}
-                    onPress={() =>
-                      console.log(`Clicked ${item.title} promotion`)
-                    }>
+
+                <Card style={styles.gridCardContent}>
+                  <View style={styles.titleContainer}>
+                    <Image
+                      source={item.logo}
+                      style={styles.brandLogo}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.gridCardTitle}>{item.title}</Text>
+                  </View>
+
+                  <View style={styles.subtitleContainer}>
                     <Text style={styles.gridCardSubtitle}>
                       Ongoing Promotions in {item.title} brand
                     </Text>
-                  </TouchableOpacity>
-                </View>
-              </Card>
+                  </View>
+                </Card>
+
+                <TouchableOpacity
+                  style={styles.favoriteIcon}
+                  onPress={() => toggleFavorite(item.id)}>
+                  <Image
+                    source={require('../assets/images/favourite.png')}
+                    style={{
+                      width: 14,
+                      height: 14,
+                      tintColor: favorites[item.id]
+                        ? COLORS.favourite
+                        : COLORS.text.secondary,
+                    }}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+              </TouchableOpacity>
             )}
           />
-        </View>
-      </View>
-
-      <View style={{flex: 0.1}}>
-        <BottomNavigation
-          style={{backgroundColor: 'COLORS.white'}}
-          navigationState={{index, routes}}
-          onIndexChange={setIndex}
-          renderScene={renderScene}
-          activeColor={COLORS.background.primary}
-          inactiveColor={COLORS.text.secondary}
-        />
+        </ScrollView>
       </View>
     </View>
   );
@@ -207,39 +269,52 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   content: {
-    flex: 0.9,
-    padding: 32,
-    //justifyContent: 'flex-end',
-    //alignItems: 'center',
+    flex: 1,
+    padding: 20,
+    paddingBottom: 0,
+    marginBottom: 55,
   },
-  title: {
-    fontFamily: 'Poppins-Bold',
+  name: {
+    fontFamily: FONTS.name,
     textAlign: 'center',
     fontSize: 24,
-    fontWeight: 'bold',
     color: COLORS.text.primary,
     lineHeight: 30,
   },
-  description: {
-    fontFamily: 'inter',
-    fontSize: 14,
-    color: COLORS.text.secondary,
+  hello: {
+    fontFamily: FONTS.name,
+    fontSize: 16,
+    color: COLORS.navbaricons,
     lineHeight: 20,
     textAlign: 'center',
     maxWidth: 300,
   },
-
-  searchbar: {
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 100,
-    backgroundColor: COLORS.white,
-    borderColor: COLORS.border,
     borderWidth: 1,
+    borderColor: COLORS.navbaricons,
+    paddingHorizontal: 8,
+    height: 40,
   },
-
+  searchIcon: {
+    width: 28,
+    height: 28,
+    tintColor: COLORS.navbaricons,
+    marginHorizontal: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.navbaricons,
+    padding: 0,
+    fontFamily: FONTS.placeholder,
+  },
   card: {
-    marginVertical: 28,
-    marginRight: 15,
-    width: 345,
+    //marginVertical: 28,
+    marginRight: 2,
+    width: 370,
     borderRadius: 15,
   },
   gridRow: {
@@ -247,37 +322,110 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   gridCard: {
-    width: '48%',
+    width: '48.5%',
     borderRadius: 10,
-    //marginBottom: 16,
+    marginBottom: 45,
+    height: 120,
+    position: 'relative',
     backgroundColor: COLORS.white,
+    justifyContent: 'center',
   },
   gridCardImage: {
-    height: 100,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
+    height: 120,
+    borderRadius: 10,
   },
   gridCardContent: {
-    padding: 12,
+    padding: 8,
+    position: 'absolute',
+    width: '90%',
+    bottom: -35,
+    marginLeft: 8,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    //alignItems: 'center',
+    marginBottom: 4,
+    width: '100%',
+  },
+  brandLogo: {
+    width: 24,
+    height: 24,
+    marginRight: 8,
   },
   gridCardTitle: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 14,
+    fontFamily: FONTS.name,
+    fontSize: 13,
     fontWeight: 'bold',
     color: COLORS.text.primary,
     marginBottom: 4,
   },
   gridCardSubtitle: {
     fontFamily: 'inter',
-    fontSize: 8,
-    color:COLORS.background.primary,
+    fontSize: 7,
+    color: COLORS.text.promotions,
     lineHeight: 8,
   },
   subtitleContainer: {
     backgroundColor: COLORS.background.secondary,
-    padding: 4,
+    padding: 2,
     borderRadius: 4,
-    alignSelf: 'flex-start', // contains width to content
+    alignSelf: 'flex-start',
+  },
+  favoriteIcon: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 4,
+    zIndex: 1,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modal: {
+    justifyContent: 'flex-end',
+    margin: 0,
+  },
+  filterContainer: {
+    backgroundColor: COLORS.white,
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    minHeight: 300,
+  },
+  filterHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  filterIndicator: {
+    width: 40,
+    height: 4,
+    backgroundColor: COLORS.border,
+    borderRadius: 2,
+    marginBottom: 20,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 8,
+  },
+  headerButton: {
+    padding: 8,
+  },
+  filterTitle: {
+    fontFamily: FONTS.title,
+    fontSize: 18,
+    color: COLORS.text.primary,
+    flex: 1,
+    textAlign: 'center',
   },
 });
 

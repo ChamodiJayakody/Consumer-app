@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Image,
 } from 'react-native';
 import { COLORS } from '../theme/colors';
+import { FONTS } from '../theme/fonts';
 
 const RegisterScreen = ({navigation}) => {
   const [name, setName] = useState('');
@@ -87,7 +87,7 @@ const RegisterScreen = ({navigation}) => {
     if (validateForm()) {
       
       console.log('Registration successful');
-      navigation.replace('Home', { userName: name });
+      navigation.replace('MainApp', { userName: name });
     }
   };
 
@@ -217,10 +217,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    
     justifyContent: 'flex-end',
     alignItems: 'center',
-    
   },
   logo: {
     width: 150,
@@ -232,15 +230,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: FONTS.title,
     textAlign: 'center',
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 24,
     color: COLORS.text.primary,
-    lineHeight: 30,
+    lineHeight: 35,
   },
   description: {
-    fontFamily: 'inter',
+    fontFamily: FONTS.description,
     fontSize: 14,
     color: COLORS.text.secondary,
     lineHeight: 20,
@@ -256,10 +253,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.border,
-    padding: 15,
+    padding: 10,
     marginBottom: 20,
     borderRadius: 100,
     fontSize: 16,
+    fontFamily: FONTS.placeholder,
+    color: COLORS.text.primary,
   },
   errorText: {
     color: COLORS.error,
@@ -267,6 +266,7 @@ const styles = StyleSheet.create({
     marginTop: -15,
     marginBottom: 10,
     marginLeft: 15,
+    fontFamily: FONTS.description,
   },
   inputError: {
     borderWidth: 1.5,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   registerButtonText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.buttontext,
   },
 });
 
