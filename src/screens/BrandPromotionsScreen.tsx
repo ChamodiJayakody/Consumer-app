@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,15 @@ const BrandPromotionsScreen = ({route}) => {
   const [favorites, setFavorites] = React.useState({});
   const [isFilterVisible, setFilterVisible] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [expandedDesc, setExpandedDesc] = useState({});
+  const [selectedFilter, setSelectedFilter] = useState('all');
+
+  const toggleDesc = id => {
+    setExpandedDesc(prev => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   const toggleFilter = () => {
     setFilterVisible(!isFilterVisible);
@@ -50,6 +59,14 @@ const BrandPromotionsScreen = ({route}) => {
       [id]: !prev[id],
     }));
   };
+
+  const filteredProducts = products.filter(product => {
+    if (selectedFilter === 'all') return true;
+    if (selectedFilter === 'b1g1') return product.promotionType === 'b1g1';
+    if (selectedFilter === 'discount3')
+      return product.promotionType === 'discount3';
+    return true;
+  });
 
   return (
     <View style={styles.container}>
@@ -107,118 +124,158 @@ const BrandPromotionsScreen = ({route}) => {
           />
         </View>
       </View>
+      <ScrollView fadingEdgeLength={20} showsVerticalScrollIndicator={false}>
+        {promotion ? (
+          <View style={styles.card}>
+            <Image source={promotion.image} style={styles.image} />
+            {/* <Text style={styles.cardTitle}>{promotion.title}</Text> */}
+          </View>
+        ) : (
+          <Text>No promotion found for this brand.</Text>
+        )}
+        <Text style={styles.title}>{brandTitle}</Text>
 
-      {promotion ? (
-        <View style={styles.card}>
-          <Image source={promotion.image} style={styles.image} />
-          {/* <Text style={styles.cardTitle}>{promotion.title}</Text> */}
+        <View>
+          <FlatList
+            data={filterOptions}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={item => item.key}
+            renderItem={({item}) => (
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  selectedFilter === item.key && {
+                    backgroundColor: COLORS.background.primary,
+                  },
+                ]}
+                onPress={() => setSelectedFilter(item.key)}>
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    selectedFilter === item.key && {color: COLORS.white},
+                  ]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
         </View>
-      ) : (
-        <Text>No promotion found for this brand.</Text>
-      )}
-      <Text style={styles.title}>{brandTitle}</Text>
 
-      <View>
-        <FlatList
-          data={filterOptions}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={item => item.key}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              style={styles.filterButton}
-              onPress={toggleFilter}>
-              <Text style={styles.filterButtonText}>{item.label}</Text>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
+        <View style={styles.divider} />
 
-      <View style={styles.divider} />
+        <View>
+          <Text style={[styles.title, {fontSize: 16}]}>
+            Main Promotions & Discounts
+          </Text>
+        </View>
 
-      <View>
-        <Text style={[styles.title, {fontSize: 16}]}>
-          Main Promotions & Discounts
-        </Text>
-      </View>
+        <View style={{flex: 1}}>
+          <FlatList
+            data={filteredProducts}
+            numColumns={3}
+            keyExtractor={item => item.id}
+            contentContainerStyle={{paddingBottom: 20}}
+            renderItem={({item}) => (
+              <TouchableOpacity
+                style={styles.productCard}
+                onPress={() =>
+                  navigation.navigate('Product', {
+                    productId: item.id,
+                    brandTitle,
+                  })
+                }>
+                {item.previousCost > item.newCost && (
+                  <View style={styles.discountBadge}>
+                    <Text style={styles.discountBadgeText}>
+                      {Math.round(
+                        ((item.previousCost - item.newCost) /
+                          item.previousCost) *
+                          100,
+                      )}
+                      %
+                    </Text>
+                  </View>
+                )}
 
-      <View style={{flex: 1}}>
-        <FlatList
-          data={products}
-          numColumns={3}
-          keyExtractor={item => item.id}
-          contentContainerStyle={{paddingBottom: 20}}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              style={styles.productCard}
-              onPress={() =>
-                navigation.navigate('Product', {
-                  productId: item.id,
-                  brandTitle,
-                })
-              }>
-              {item.previousCost > item.newCost && (
-                <View style={styles.discountBadge}>
-                  <Text style={styles.discountBadgeText}>
-                    {Math.round(
-                      ((item.previousCost - item.newCost) / item.previousCost) *
-                        100,
-                    )}
-                    %
+                <TouchableOpacity
+                  style={styles.favoriteIcon}
+                  onPress={() => toggleFavorite(item.id)}>
+                  <Icon
+                    name={favorites[item.id] ? 'heart' : 'heart-o'}
+                    size={12}
+                    color={
+                      favorites[item.id] ? COLORS.favourite : COLORS.favourite
+                    }
+                  />
+                </TouchableOpacity>
+
+                <Image
+                  source={
+                    Array.isArray(item.image) ? item.image[0] : item.image
+                  }
+                  style={styles.productImage}
+                />
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    marginBottom: 4,
+                  }}>
+                  <Text
+                    style={{
+                      color: COLORS.favourite,
+                      fontSize: 10,
+                      marginRight: 6,
+                      fontFamily: FONTS.buttontext,
+                    }}>
+                    {item.newCost ? `Rs. ${item.newCost}` : ''}
+                  </Text>
+                  <Text
+                    style={{
+                      textDecorationLine: 'line-through',
+                      color: COLORS.text.secondary,
+                      fontSize: 10,
+
+                      fontFamily: FONTS.buttontext,
+                    }}>
+                    {item.previousCost ? `Rs. ${item.previousCost}` : ''}
                   </Text>
                 </View>
-              )}
 
-              <TouchableOpacity
-                style={styles.favoriteIcon}
-                onPress={() => toggleFavorite(item.id)}>
-                <Icon
-                  name={favorites[item.id] ? 'heart' : 'heart-o'}
-                  size={10}
-                  color={
-                    favorites[item.id] ? COLORS.favourite : COLORS.favourite
-                  }
-                />
+                <Text
+                  style={styles.productDescription}
+                  numberOfLines={expandedDesc[item.id] ? undefined : 2}
+                  ellipsizeMode="tail">
+                  {item.description}
+                </Text>
+                {item.description && item.description.length > 40 && (
+                  <TouchableOpacity
+                    onPress={() => toggleDesc(item.id)}
+                    style={{
+                      paddingVertical: 4,
+                      paddingHorizontal: 8,
+                      alignSelf: 'flex-start',
+                    }}
+                    hitSlop={{top: 8, bottom: 8, left: 8, right: 8}} // Further increases touchable area
+                  >
+                    <Text
+                      style={{
+                        color: COLORS.favourite,
+                        fontSize: 8,
+                        marginTop: 2,
+                      }}>
+                      {expandedDesc[item.id] ? 'See less' : 'See more'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </TouchableOpacity>
-
-              <Image
-                source={Array.isArray(item.image) ? item.image[0] : item.image}
-                style={styles.productImage}
-              />
-
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'flex-start',
-                  marginBottom: 4,
-                }}>
-                <Text
-                  style={{
-                    color: COLORS.favourite,
-                    fontSize: 10,
-                    marginRight: 6,
-                    fontFamily: FONTS.buttontext,
-                  }}>
-                  {item.newCost ? `Rs. ${item.newCost}` : ''}
-                </Text>
-                <Text
-                  style={{
-                    textDecorationLine: 'line-through',
-                    color: COLORS.text.secondary,
-                    fontSize: 10,
-                    
-                    fontFamily: FONTS.buttontext,
-                  }}>
-                  {item.previousCost ? `Rs. ${item.previousCost}` : ''}
-                </Text>
-              </View>
-
-              <Text style={styles.productName}>{item.name}</Text>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={<Text>No products for this brand.</Text>}
-        />
-      </View>
+            )}
+            ListEmptyComponent={<Text>No products for this brand.</Text>}
+          />
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -256,7 +313,9 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.placeholder,
   },
   filterButton: {
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.background.primary,
+    borderWidth: 1,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 100,
@@ -265,7 +324,7 @@ const styles = StyleSheet.create({
   },
   filterButtonText: {
     fontSize: 14,
-    color: COLORS.white,
+    color: COLORS.background.primary,
     padding: 0,
     fontFamily: FONTS.placeholder,
   },
@@ -294,16 +353,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 6,
   },
-  productName: {
-    fontSize: 5,
+  productDescription: {
+    fontSize: 7,
     textAlign: 'left',
     color: COLORS.text.primary,
+    marginTop: 2,
   },
   favoriteIcon: {
     position: 'absolute',
     top: 6,
     right: 6,
     zIndex: 1,
+    padding: 2,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

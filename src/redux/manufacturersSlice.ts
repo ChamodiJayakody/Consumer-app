@@ -22,7 +22,9 @@ interface ManufacturersState {
     description: string;
     previousCost: number;
     newCost: number;
+    promotionType: string;
   }>;
+  favorites: { [productId: string]: boolean };
 }
 
 const initialState: ManufacturersState = {
@@ -114,6 +116,7 @@ const initialState: ManufacturersState = {
         'Buy any large Baby cheramy peach range 300g baby cream and get 100g Soap',
       previousCost: 300,
       newCost: 200,
+      promotionType:'b1g1',
     },
     {
       id: 'p2',
@@ -121,9 +124,10 @@ const initialState: ManufacturersState = {
       name: 'Product 2',
       image: [require('../assets/images/bc2.png')],
       description:
-        'Buy any large Baby cheramy peach range 300g baby cream and get 100g Soap',
+        'Buy any large Baby cheramy Colonge 300ml baby cream and get 75ml Colonge.',
       previousCost: 600,
       newCost: 300,
+      promotionType:'b1g1'
     },
     {
       id: 'p3',
@@ -131,11 +135,13 @@ const initialState: ManufacturersState = {
       name: 'Product 3',
       image: [require('../assets/images/bc3.png')],
       description:
-        'Buy any large Baby cheramy peach range 300g baby cream and get 100g Soap',
+        'Buy 3  Baby cheramy herbal range 250g  baby soap and get 20% discount',
       previousCost: 1200,
       newCost: 950,
+      promotionType:'discount3'
     },
   ],
+  favorites: {},
 };
 
 const manufacturersSlice = createSlice({
@@ -145,8 +151,12 @@ const manufacturersSlice = createSlice({
     setSelectedManufacturer: (state, action: PayloadAction<string>) => {
       state.selectedManufacturer = action.payload;
     },
+    toggleFavorite: (state, action: PayloadAction<string>) => {
+      const id = action.payload;
+      state.favorites[id] = !state.favorites[id];
+    },
   },
 });
 
-export const {setSelectedManufacturer} = manufacturersSlice.actions;
+export const {setSelectedManufacturer, toggleFavorite} = manufacturersSlice.actions;
 export default manufacturersSlice.reducer;

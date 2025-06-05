@@ -18,9 +18,7 @@ import { RootState } from '../redux/store';
 interface FilterModalProps {
   isVisible: boolean;
   onClose: () => void;
-  //onSelectManufacturer: (manufacturerId: string) => void;
 }
-
 
 const FilterModal = ({isVisible, onClose}: FilterModalProps) => {
   const dispatch = useDispatch();

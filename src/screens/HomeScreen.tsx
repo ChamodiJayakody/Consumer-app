@@ -214,6 +214,7 @@ const HomeScreen = ({route}) => {
             renderItem={({item}) => (
               <TouchableOpacity
                 style={styles.gridCard}
+                activeOpacity={0.8}
                 onPress={() =>
                   navigation.navigate('BrandPromotions', {
                     brandId: item.id,

@@ -9,7 +9,7 @@ import {
   FlatList,
   ScrollView,
 } from 'react-native';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
 import {RootState} from '../redux/store';
 import {COLORS} from '../theme/colors';
@@ -17,7 +17,7 @@ import {FONTS} from '../theme/fonts';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import FAIcon from 'react-native-vector-icons/FontAwesome';
 import ImageViewer from 'react-native-image-zoom-viewer';
-//import ImageZoom from 'react-native-image-pan-zoom';
+import {toggleFavorite} from '../redux/manufacturersSlice';
 
 const IMAGE_SIZE = 300;
 
@@ -30,6 +30,10 @@ const ProductScreen = ({route}) => {
   //const [zoomScale, setZoomScale] = React.useState(1);
   const {productId, brandId, brandTitle} = route.params;
   const [galleryCurrentIndex, setGalleryCurrentIndex] = React.useState(0);
+  const dispatch = useDispatch();
+  const favorites = useSelector(
+    (state: RootState) => state.manufacturers.favorites,
+  );
   const product = useSelector((state: RootState) =>
     state.manufacturers.products.find(p => p.id === productId),
   );
@@ -50,141 +54,207 @@ const ProductScreen = ({route}) => {
 
   return (
     <ScrollView fadingEdgeLength={20} showsVerticalScrollIndicator={false}>
-    <View style={styles.container}>
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={28} color={COLORS.text.primary} />
-        </TouchableOpacity>
+      <View style={styles.container}>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={28} color={COLORS.text.primary} />
+          </TouchableOpacity>
 
-        {/* Favourite Button */}
-        <TouchableOpacity style={styles.favButton}>
-          <FAIcon name="heart" size={28} color={COLORS.favourite} />
-        </TouchableOpacity>
-      </View>
+          {/* Favourite Button */}
+          <TouchableOpacity
+            style={styles.favButton}
+            onPress={() => dispatch(toggleFavorite(product.id))}>
+            <FAIcon
+              name={favorites[product.id] ? 'heart' : 'heart-o'}
+              size={24}
+              color={COLORS.favourite}
+            />
+          </TouchableOpacity>
+        </View>
 
-      
+        <View style={styles.imageContainer}>
+          <FlatList
+            data={images}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, idx) => idx.toString()}
+            renderItem={({item, index}) => (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setGalleryIndex(index);
+                  setGalleryVisible(true);
+                }}>
+                <Image
+                  source={item}
+                  style={styles.image}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            )}
+            onMomentumScrollEnd={e => {
+              const index = Math.round(e.nativeEvent.contentOffset.x / 300);
+              setGalleryIndex(index);
+            }}
+            style={{width: 300, height: 300}}
+          />
+          <View style={styles.indicatorContainer}>
+            {images.map((_, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.indicator,
+                  idx === galleryIndex && styles.activeIndicator,
+                ]}
+              />
+            ))}
+          </View>
+        </View>
 
-      <View style={styles.imageContainer}>
-  <FlatList
-    data={images}
-    horizontal
-    pagingEnabled
-    showsHorizontalScrollIndicator={false}
-    keyExtractor={(_, idx) => idx.toString()}
-    renderItem={({item, index}) => (
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => {
-          setGalleryIndex(index);
-          setGalleryVisible(true);
-        }}>
-        <Image source={item} style={styles.image} resizeMode="contain" />
-      </TouchableOpacity>
-    )}
-    onMomentumScrollEnd={e => {
-      const index = Math.round(
-        e.nativeEvent.contentOffset.x / 300
-      );
-      setGalleryIndex(index);
-    }}
-    style={{width: 300, height: 300}}
-  />
-  <View style={styles.indicatorContainer}>
-    {images.map((_, idx) => (
-      <View
-        key={idx}
-        style={[
-          styles.indicator,
-          idx === galleryIndex && styles.activeIndicator,
-        ]}
-      />
-    ))}
-  </View>
-</View>
+        {/* Modal Gallery */}
+        <Modal
+          visible={galleryVisible}
+          transparent={true}
+          onRequestClose={() => setGalleryVisible(false)}>
+          <ImageViewer
+            imageUrls={viewerImages}
+            index={galleryIndex}
+            enableSwipeDown
+            onSwipeDown={() => setGalleryVisible(false)}
+            onCancel={() => setGalleryVisible(false)}
+            saveToLocalByLongPress={false}
+            backgroundColor="#fff"
+            onChange={idx => setGalleryCurrentIndex(idx ?? 0)}
+            renderIndicator={() => (
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 30,
+                  alignSelf: 'center',
+                  backgroundColor: 'rgba(0,0,0,0.4)',
+                  borderRadius: 12,
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                }}>
+                <Text style={{color: '#fff', fontSize: 12}}>
+                  {galleryCurrentIndex + 1} / {viewerImages.length}
+                </Text>
+              </View>
+            )}
+          />
+        </Modal>
 
-      {/* Modal Gallery */}
-      <Modal
-        visible={galleryVisible}
-        transparent={true}
-        onRequestClose={() => setGalleryVisible(false)}>
-        <ImageViewer
-          imageUrls={viewerImages}
-          index={galleryIndex}
-          enableSwipeDown
-          onSwipeDown={() => setGalleryVisible(false)}
-          onCancel={() => setGalleryVisible(false)}
-          saveToLocalByLongPress={false}
-          backgroundColor="#fff"
-          onChange={idx => setGalleryCurrentIndex(idx ?? 0)}
-          renderIndicator={() => (
-            <View
+        <View style={styles.subcontainer}>
+          <Text style={styles.title}>{brandTitle}</Text>
+          <Text style={styles.subtitle}>{product.name}</Text>
+          <Text style={[styles.subtitle, {fontSize: 14}]}>
+            {product.description}
+          </Text>
+
+          <Text
+            style={{
+              fontFamily: FONTS.description,
+              fontSize: 11,
+              marginTop: 25,
+              textDecorationLine: 'line-through',
+              color: COLORS.text.secondary,
+            }}>
+            {product.previousCost ? `Rs. ${product.previousCost}` : ''}
+          </Text>
+          <Text
+            style={{
+              fontFamily: FONTS.buttontext,
+              fontSize: 24,
+              color: COLORS.favourite,
+            }}>
+            {product.newCost ? `Rs. ${product.newCost}` : ''}
+          </Text>
+        </View>
+
+        <View style={styles.tabRow}>
+          <TouchableOpacity onPress={() => setSelectedTab('Shop')}>
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === 'Shop' && styles.tabTextSelected,
+              ]}>
+              Shop
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setSelectedTab('About')}>
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === 'About' && styles.tabTextSelected,
+              ]}>
+              About
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {selectedTab === 'Shop' ? (
+          <View style={{padding: 16, width: '100%'}}>
+            {/* Replace with your actual shop content */}
+            <Text
               style={{
-                position: 'absolute',
-                bottom: 30,
-                alignSelf: 'center',
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                borderRadius: 12,
-                paddingHorizontal: 8,
-                paddingVertical: 2,
+                fontFamily: FONTS.description,
+                fontSize: 15,
+                color: COLORS.text.primary,
               }}>
-              <Text style={{color: '#fff', fontSize: 12}}>
-                {galleryCurrentIndex + 1} / {viewerImages.length}
+              Shop this product from our trusted partners or visit our store for
+              more options.
+            </Text>
+            {/* Example: Add a button or list of shops here */}
+            <TouchableOpacity
+              style={{
+                marginTop: 16,
+                backgroundColor: COLORS.favourite,
+                padding: 12,
+                borderRadius: 8,
+              }}>
+              <Text
+                style={{
+                  color: '#fff',
+                  fontFamily: FONTS.buttontext,
+                  textAlign: 'center',
+                }}>
+                Buy Now
               </Text>
-            </View>
-          )}
-        />
-      </Modal>
-
-      <View style={styles.subcontainer}>
-        <Text style={styles.title}>{brandTitle}</Text>
-        <Text style={styles.subtitle}>{product.name}</Text>
-        <Text style={[styles.subtitle, {fontSize: 14}]}>
-          {product.description}
-        </Text>
-
-        <Text
-          style={{
-            fontFamily: FONTS.description,
-            fontSize: 11,
-            marginTop: 25,
-            textDecorationLine: 'line-through',
-            color: COLORS.text.secondary,
-          }}>
-          {product.previousCost ? `Rs. ${product.previousCost}` : ''}
-        </Text>
-        <Text
-          style={{
-            fontFamily: FONTS.buttontext,
-            fontSize: 24,
-            color: COLORS.favourite,
-          }}>
-          {product.newCost ? `Rs. ${product.newCost}` : ''}
-        </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={{padding: 16, width: '100%'}}>
+            {/* Replace with your actual about content */}
+            <Text
+              style={{
+                fontFamily: FONTS.description,
+                fontSize: 15,
+                color: COLORS.text.primary,
+              }}>
+              {product.description}
+            </Text>
+            {/* Example: Add more details about the product, brand, or usage here */}
+            <Text
+              style={{
+                marginTop: 12,
+                color: COLORS.text.secondary,
+                fontSize: 13,
+              }}>
+              Brand: {brandTitle}
+            </Text>
+            <Text
+              style={{
+                marginTop: 4,
+                color: COLORS.text.secondary,
+                fontSize: 13,
+              }}>
+              Product ID: {product.id}
+            </Text>
+          </View>
+        )}
       </View>
-
-      <View style={styles.tabRow}>
-        <TouchableOpacity onPress={() => setSelectedTab('Shop')}>
-          <Text
-            style={[
-              styles.tabText,
-              selectedTab === 'Shop' && styles.tabTextSelected,
-            ]}>
-            Shop
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setSelectedTab('About')}>
-          <Text
-            style={[
-              styles.tabText,
-              selectedTab === 'About' && styles.tabTextSelected,
-            ]}>
-            About
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
     </ScrollView>
   );
 };
@@ -221,9 +291,11 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: 300,
-    height: 400,
+    height: 300,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 16,
   },
   buttonRow: {
     position: 'absolute',
