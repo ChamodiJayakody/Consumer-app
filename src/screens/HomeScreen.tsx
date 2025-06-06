@@ -36,21 +36,24 @@ const HomeScreen = ({route}) => {
     toggleFilter();
   };
 
-  const filteredCardsData = useMemo(
-    () =>
-      selectedManufacturer
-        ? cardsData.filter(card => card.manufacturerId === selectedManufacturer)
-        : cardsData,
-    [selectedManufacturer, cardsData],
-  );
+const filteredCardsData = useMemo(
+  () =>
+    selectedManufacturer
+      ? cardsData.filter(card => card.manufacturerId === selectedManufacturer)
+      : cardsData,
+  [selectedManufacturer, cardsData],
+);
 
-  const filteredGridCards = useMemo(
-    () =>
-      selectedManufacturer
-        ? gridCards.filter(card => card.manufacturerId === selectedManufacturer)
-        : gridCards,
-    [selectedManufacturer, gridCards],
-  );
+const filteredGridCards = useMemo(
+  () =>
+    (selectedManufacturer
+      ? gridCards.filter(card => card.manufacturerId === selectedManufacturer)
+      : gridCards
+    ).filter(card =>
+      card.title.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+  [selectedManufacturer, gridCards, searchQuery],
+);
 
   const toggleFilter = () => {
     setFilterVisible(!isFilterVisible);

@@ -5,13 +5,12 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
-import HomeScreen from './src/screens/HomeScreen';
 import { COLORS } from './src/theme/colors';
 import {FONTS} from './src/theme/fonts';
 import TabNavigator from './src/navigation/TabNavigator';
 import { Provider } from 'react-redux';
 import { store } from './src/redux/store';
-import BrandPromotionsScreen from './src/screens/BrandPromotionsScreen';
+import FlashMessage from "react-native-flash-message";
 
 const Stack = createStackNavigator();
 
@@ -63,6 +62,7 @@ const App = () => {
         <Stack.Screen name="MainApp" component={TabNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
+    <FlashMessage position="top" />
     </Provider>
     );
 };

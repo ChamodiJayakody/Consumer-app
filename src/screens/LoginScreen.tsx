@@ -1,6 +1,11 @@
 import React, {useState} from 'react';
-import { COLORS } from '../theme/colors';
-import { FONTS } from '../theme/fonts';
+import {COLORS} from '../theme/colors';
+import {FONTS} from '../theme/fonts';
+import {useDispatch} from 'react-redux';
+import {setUser} from '../redux/userSlice';
+import auth from '@react-native-firebase/auth';
+import {Alert} from 'react-native';
+import {showMessage} from 'react-native-flash-message';
 import {
   View,
   Text,
@@ -15,28 +20,28 @@ const LoginScreen = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({
     email: false,
-    password: false
+    password: false,
   });
 
   const [errorMessages, setErrorMessages] = useState({
     email: '',
-    password: ''
+    password: '',
   });
 
-//   useEffect(() => {
-//   // Add any side effects here
-//   console.log('test');
-// }, []);
+  //   useEffect(() => {
+  //   // Add any side effects here
+  //   console.log('test');
+  // }, []);
 
   const validateForm = () => {
     const newErrors = {
       email: false,
-      password: false
+      password: false,
     };
-    
+
     const newErrorMessages = {
       email: '',
-      password: ''
+      password: '',
     };
 
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
@@ -57,17 +62,53 @@ const LoginScreen = ({navigation}) => {
     return !newErrors.email && !newErrors.password;
   };
 
-  const handleLogin = () => {
+  // ...existing state...
+  const dispatch = useDispatch();
+
+  const handleLogin = async () => {
     if (validateForm()) {
-      // Proceed with login
-      console.log('Login successful');
-      navigation.replace('MainApp', { userName: email.split('@')[0] });
+      try {
+        const userCredential = await auth().signInWithEmailAndPassword(
+          email,
+          password,
+        );
+        const user = userCredential.user;
+        dispatch(setUser({email: user.email, uid: user.uid}));
+        showMessage({
+          message: 'Login successful',
+          type: 'success',
+          icon: 'auto',
+        });
+        navigation.replace('MainApp', {userName: email.split('@')[0]});
+      } catch (error) {
+        let message = 'Wrong credentials';
+        if (error.code === 'auth/user-not-found') {
+          message = 'User not registered';
+        } else if (error.code === 'auth/wrong-password') {
+          message = 'Wrong password, try again';
+        } else if (error.code === 'auth/invalid-email') {
+          message = 'Please enter a valid email address.';
+        }
+        showMessage({
+          message: message,
+          type: 'danger',
+          icon: 'auto',
+        });
+        setErrorMessages({
+          ...errorMessages,
+          password: message,
+        });
+        setErrors({
+          ...errors,
+          password: true,
+        });
+      }
     }
   };
 
   return (
     <View style={styles.container}>
-      <View style={{flex:0.3}}></View>
+      <View style={{flex: 0.3}}></View>
 
       <View style={styles.content}>
         <Image
@@ -75,27 +116,22 @@ const LoginScreen = ({navigation}) => {
           style={styles.logo}
           resizeMode="contain"
         />
-          <View style={styles.textContainer}>
-            <Text style={styles.title}>Login</Text>
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>Login</Text>
 
-            <Text style={styles.description}>
-              Login to get started..
-            </Text>
-          </View>
+          <Text style={styles.description}>Login to get started..</Text>
+        </View>
       </View>
 
       <View style={styles.formContainer}>
         <TextInput
-          style={[
-            styles.input,
-            errors.email && styles.inputError
-          ]}
+          style={[styles.input, errors.email && styles.inputError]}
           placeholder="Email/phone number"
-          placeholderTextColor= 'COLORS.placeholder'
+          placeholderTextColor={COLORS.placeholder}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
-          onChangeText={(text) => {
+          onChangeText={text => {
             setEmail(text);
             if (errors.email) setErrors({...errors, email: false});
           }}
@@ -104,15 +140,12 @@ const LoginScreen = ({navigation}) => {
           <Text style={styles.errorText}>{errorMessages.email}</Text>
         )}
         <TextInput
-          style={[
-            styles.input,
-            errors.password && styles.inputError
-          ]}
+          style={[styles.input, errors.password && styles.inputError]}
           placeholder="Password"
-          placeholderTextColor='COLORS.placeholder'
+          placeholderTextColor={COLORS.placeholder}
           secureTextEntry
           value={password}
-          onChangeText={(text) => {
+          onChangeText={text => {
             setPassword(text);
             if (errors.password) setErrors({...errors, password: false});
           }}
@@ -124,16 +157,11 @@ const LoginScreen = ({navigation}) => {
           <Text style={styles.forgotPasswordText}>Forgot password ?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.loginButton}
-          onPress={handleLogin}
-        >
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginButtonText}>Login</Text>
         </TouchableOpacity>
       </View>
     </View>
-
-    
   );
 };
 
@@ -146,10 +174,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 0.3,
-    
+
     justifyContent: 'flex-end',
     alignItems: 'center',
-    
   },
   logo: {
     width: 150,
@@ -178,7 +205,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 0.4,
-    
+
     justifyContent: 'center',
   },
   errorText: {

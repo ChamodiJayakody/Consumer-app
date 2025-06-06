@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "958897639911",
+    "project_id": "consumer-app-f39e0",
+    "storage_bucket": "consumer-app-f39e0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:958897639911:android:6fa70f9147e453a66b2d42",
+        "android_client_info": {
+          "package_name": "com.consumerapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwVxe-Vmj-PxTLrxs2BXuSRxfJLxTJdec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

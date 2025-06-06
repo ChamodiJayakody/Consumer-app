@@ -11,9 +11,9 @@ import Modal from 'react-native-modal';
 import Icon from 'react-native-vector-icons/Feather';
 import {COLORS} from '../theme/colors';
 import {FONTS} from '../theme/fonts';
-import { useDispatch, useSelector } from 'react-redux';
-import { setSelectedManufacturer } from '../redux/manufacturersSlice';
-import { RootState } from '../redux/store';
+import {useDispatch, useSelector} from 'react-redux';
+import {setSelectedManufacturer} from '../redux/manufacturersSlice';
+import {RootState} from '../redux/store';
 
 interface FilterModalProps {
   isVisible: boolean;
@@ -23,7 +23,7 @@ interface FilterModalProps {
 const FilterModal = ({isVisible, onClose}: FilterModalProps) => {
   const dispatch = useDispatch();
   const selectedManufacturer = useSelector(
-    (state: RootState) => state.manufacturers.selectedManufacturer
+    (state: RootState) => state.manufacturers.selectedManufacturer,
   );
 
   const handleManufacturerSelect = (manufacturerId: string) => {
@@ -45,6 +45,11 @@ const FilterModal = ({isVisible, onClose}: FilterModalProps) => {
       logo: require('../assets/images/hemas.png'),
     },
   ];
+
+  const filteredManufacturers = manufacturers.filter(m =>
+    m.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
 
   return (
     <Modal
@@ -88,7 +93,7 @@ const FilterModal = ({isVisible, onClose}: FilterModalProps) => {
 
         <View style={styles.manufacturerContainer}>
           <Text style={styles.sectionTitle}>SELECT MANUFACTURER</Text>
-          {manufacturers.map((manufacturer, index) => (
+          {filteredManufacturers.map((manufacturer, index) => (
             <React.Fragment key={manufacturer.id}>
               <TouchableOpacity
                 style={styles.manufacturerOption}

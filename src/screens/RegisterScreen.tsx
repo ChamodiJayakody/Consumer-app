@@ -6,8 +6,11 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
-import { COLORS } from '../theme/colors';
-import { FONTS } from '../theme/fonts';
+import {COLORS} from '../theme/colors';
+import {FONTS} from '../theme/fonts';
+import {useDispatch} from 'react-redux';
+import {setUser} from '../redux/userSlice';
+import auth from '@react-native-firebase/auth';
 
 const RegisterScreen = ({navigation}) => {
   const [name, setName] = useState('');
@@ -20,7 +23,7 @@ const RegisterScreen = ({navigation}) => {
     email: false,
     phonenumber: false,
     password: false,
-    confirmpassword: false
+    confirmpassword: false,
   });
 
   const [errorMessages, setErrorMessages] = useState({
@@ -28,16 +31,16 @@ const RegisterScreen = ({navigation}) => {
     email: '',
     phonenumber: '',
     password: '',
-    confirmpassword: ''
+    confirmpassword: '',
   });
 
   const validateForm = () => {
     const newErrors = {
       name: false,
-    email: false,
-    phonenumber: false,
-    password: false,
-    confirmpassword: false
+      email: false,
+      phonenumber: false,
+      password: false,
+      confirmpassword: false,
     };
 
     const newErrorMessages = {
@@ -45,12 +48,12 @@ const RegisterScreen = ({navigation}) => {
       email: '',
       phonenumber: '',
       password: '',
-      confirmpassword: ''
+      confirmpassword: '',
     };
 
     if (!name || !name.trim()) {
-        newErrors.name = true; 
-        newErrorMessages.name = 'Name is required';
+      newErrors.name = true;
+      newErrorMessages.name = 'Name is required';
     }
 
     // Email validation
@@ -60,22 +63,23 @@ const RegisterScreen = ({navigation}) => {
     }
 
     if (!phonenumber || !/^\d{10}$/.test(phonenumber)) {
-        newErrors.phonenumber = true;
-        newErrorMessages.phonenumber = 'Please enter a valid 10-digit phone number';
+      newErrors.phonenumber = true;
+      newErrorMessages.phonenumber =
+        'Please enter a valid 10-digit phone number';
     }
 
     // Password validation (minimum 6 characters)
     if (!password || password.length < 6) {
       newErrors.password = true;
-      newErrorMessages.password = 'Password is required'
+      newErrorMessages.password = 'Password is required';
     } else if (password.length < 6) {
       newErrors.password = true;
       newErrorMessages.password = 'Password must be at least 6 characters';
     }
 
     if (password !== confirmpassword) {
-        newErrors.confirmpassword = true;
-        newErrorMessages.confirmpassword = 'Passwords do not match';
+      newErrors.confirmpassword = true;
+      newErrorMessages.confirmpassword = 'Passwords do not match';
     }
 
     setErrors(newErrors);
@@ -83,40 +87,56 @@ const RegisterScreen = ({navigation}) => {
     return !Object.values(newErrors).some(error => error);
   };
 
-  const handleReg = () => {
-    if (validateForm()) {
-      
-      console.log('Registration successful');
-      navigation.replace('MainApp', { userName: name });
+  // const handleReg = () => {
+  //   if (validateForm()) {
+
+  //     console.log('Registration successful');
+  //     navigation.replace('MainApp', { userName: name });
+  //   }
+  // };
+
+  const dispatch = useDispatch();
+
+  const handleReg = async () => {
+  if (validateForm()) {
+    try {
+      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+      dispatch(setUser({ email: user.email, uid: user.uid }));
+      navigation.replace('MainApp', { userName: name || email.split('@')[0] });
+    } catch (error) {
+      setErrorMessages({
+        ...errorMessages,
+        password: error.message || 'Registration failed. Please try again.',
+      });
+      setErrors({
+        ...errors,
+        password: true,
+      });
     }
-  };
+  }
+};
 
   return (
     <View style={styles.container}>
-      
-
       <View style={styles.content}>
-        
-          <View style={styles.textContainer}>
-            <Text style={styles.title}>Register</Text>
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>Register</Text>
 
-            <Text style={styles.description}>
-              hello! Register to get started..
-            </Text>
-          </View>
+          <Text style={styles.description}>
+            hello! Register to get started..
+          </Text>
+        </View>
       </View>
 
       <View style={styles.formContainer}>
         <TextInput
-          style={[
-            styles.input,
-            errors.name && styles.inputError
-          ]}
+          style={[styles.input, errors.name && styles.inputError]}
           placeholder="Name"
-          placeholderTextColor='COLORS.placeholder'
+          placeholderTextColor={COLORS.placeholder}
           autoCapitalize="words"
           value={name}
-          onChangeText={(text) => {
+          onChangeText={text => {
             setName(text);
             if (errors.name) setErrors({...errors, name: false});
           }}
@@ -125,16 +145,13 @@ const RegisterScreen = ({navigation}) => {
           <Text style={styles.errorText}>{errorMessages.name}</Text>
         )}
         <TextInput
-          style={[
-            styles.input,
-            errors.email && styles.inputError
-          ]}
+          style={[styles.input, errors.email && styles.inputError]}
           placeholder="Email"
-          placeholderTextColor='COLORS.placeholder'
+          placeholderTextColor={COLORS.placeholder}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
-          onChangeText={(text) => {
+          onChangeText={text => {
             setEmail(text);
             if (errors.email) setErrors({...errors, email: false});
           }}
@@ -143,16 +160,13 @@ const RegisterScreen = ({navigation}) => {
           <Text style={styles.errorText}>{errorMessages.email}</Text>
         )}
         <TextInput
-          style={[
-            styles.input,
-            errors.phonenumber && styles.inputError
-          ]}
+          style={[styles.input, errors.phonenumber && styles.inputError]}
           placeholder="Phone number"
-          placeholderTextColor="COLORS.placeholder"
+          placeholderTextColor={COLORS.placeholder}
           keyboardType="phone-pad"
           autoCapitalize="none"
           value={phonenumber}
-          onChangeText={(text) => {
+          onChangeText={text => {
             setPhonenumber(text);
             if (errors.phonenumber) setErrors({...errors, phonenumber: false});
           }}
@@ -161,15 +175,12 @@ const RegisterScreen = ({navigation}) => {
           <Text style={styles.errorText}>{errorMessages.phonenumber}</Text>
         )}
         <TextInput
-          style={[
-            styles.input,
-            errors.password && styles.inputError
-          ]}
+          style={[styles.input, errors.password && styles.inputError]}
           placeholder="Password"
-          placeholderTextColor="COLORS.placeholder"
+          placeholderTextColor={COLORS.placeholder}
           secureTextEntry
           value={password}
-          onChangeText={(text) => {
+          onChangeText={text => {
             setPassword(text);
             if (errors.password) setErrors({...errors, password: false});
           }}
@@ -178,33 +189,26 @@ const RegisterScreen = ({navigation}) => {
           <Text style={styles.errorText}>{errorMessages.password}</Text>
         )}
         <TextInput
-          style={[
-            styles.input,
-            errors.confirmpassword && styles.inputError
-          ]}
+          style={[styles.input, errors.confirmpassword && styles.inputError]}
           placeholder="Confirm Password"
-          placeholderTextColor="COLORS.placeholder"
+          placeholderTextColor={COLORS.placeholder}
           secureTextEntry
           value={confirmpassword}
-          onChangeText={(text) => {
+          onChangeText={text => {
             setConfirmPassword(text);
-            if (errors.confirmpassword) setErrors({...errors, confirmpassword: false});
+            if (errors.confirmpassword)
+              setErrors({...errors, confirmpassword: false});
           }}
         />
         {errors.confirmpassword && (
           <Text style={styles.errorText}>{errorMessages.confirmpassword}</Text>
         )}
 
-        <TouchableOpacity 
-          style={styles.registerButton}
-          onPress={handleReg}
-        >
+        <TouchableOpacity style={styles.registerButton} onPress={handleReg}>
           <Text style={styles.registerButtonText}>Register</Text>
         </TouchableOpacity>
       </View>
     </View>
-
-    
   );
 };
 

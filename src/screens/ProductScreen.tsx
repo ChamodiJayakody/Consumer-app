@@ -23,11 +23,9 @@ const IMAGE_SIZE = 300;
 
 const ProductScreen = ({route}) => {
   const navigation = useNavigation();
-  //const [activeIndex, setActiveIndex] = React.useState(0);
   const [selectedTab, setSelectedTab] = React.useState('Shop');
   const [galleryVisible, setGalleryVisible] = React.useState(false);
   const [galleryIndex, setGalleryIndex] = React.useState(0);
-  //const [zoomScale, setZoomScale] = React.useState(1);
   const {productId, brandId, brandTitle} = route.params;
   const [galleryCurrentIndex, setGalleryCurrentIndex] = React.useState(0);
   const dispatch = useDispatch();
@@ -83,7 +81,7 @@ const ProductScreen = ({route}) => {
             keyExtractor={(_, idx) => idx.toString()}
             renderItem={({item, index}) => (
               <TouchableOpacity
-                activeOpacity={0.8}
+                activeOpacity={0.6}
                 onPress={() => {
                   setGalleryIndex(index);
                   setGalleryVisible(true);
