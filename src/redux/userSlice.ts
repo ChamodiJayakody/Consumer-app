@@ -1,11 +1,13 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 
 interface UserState {
   user: any | null;
+  token: string | null;
 }
 
 const initialState: UserState = {
   user: null,
+  token: null,
 };
 
 const userSlice = createSlice({
@@ -15,11 +17,15 @@ const userSlice = createSlice({
     setUser(state, action: PayloadAction<any>) {
       state.user = action.payload;
     },
+    setToken(state, action: PayloadAction<string>) {
+      state.token = action.payload;
+    },
     clearUser(state) {
       state.user = null;
+      state.token = null;
     },
   },
 });
 
-export const { setUser, clearUser } = userSlice.actions;
+export const {setUser, setToken, clearUser} = userSlice.actions;
 export default userSlice.reducer;

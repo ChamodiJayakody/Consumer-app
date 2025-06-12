@@ -2,9 +2,9 @@ import React, {useState} from 'react';
 import {COLORS} from '../theme/colors';
 import {FONTS} from '../theme/fonts';
 import {useDispatch} from 'react-redux';
-import {setUser} from '../redux/userSlice';
+import {setUser, setToken} from '../redux/userSlice';
 import auth from '@react-native-firebase/auth';
-import {Alert} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {showMessage} from 'react-native-flash-message';
 import {
   View,
@@ -15,7 +15,7 @@ import {
   Image,
 } from 'react-native';
 
-const LoginScreen = ({navigation}) => {
+export const LoginScreen = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({
@@ -65,38 +65,95 @@ const LoginScreen = ({navigation}) => {
   // ...existing state...
   const dispatch = useDispatch();
 
+  // const handleLogin = async () => {
+  //   if (validateForm()) {
+  //     try {
+  //       const userCredential = await auth().signInWithEmailAndPassword(
+  //         email,
+  //         password,
+  //       );
+  //       const user = userCredential.user;
+  //       dispatch(setUser({email: user.email, uid: user.uid}));
+  //       showMessage({
+  //         message: 'Login successful',
+  //         type: 'success',
+  //         icon: 'auto',
+  //       });
+  //       navigation.replace('MainApp', {userName: email.split('@')[0]});
+  //     } catch (error) {
+  //       let message = 'Wrong credentials';
+  //       if (error.code === 'auth/user-not-found') {
+  //         message = 'User not registered';
+  //       } else if (error.code === 'auth/wrong-password') {
+  //         message = 'Wrong password, try again';
+  //       } else if (error.code === 'auth/invalid-email') {
+  //         message = 'Please enter a valid email address.';
+  //       }
+  //       showMessage({
+  //         message: message,
+  //         type: 'danger',
+  //         icon: 'auto',
+  //       });
+  //       setErrorMessages({
+  //         ...errorMessages,
+  //         password: message,
+  //       });
+  //       setErrors({
+  //         ...errors,
+  //         password: true,
+  //       });
+  //     }
+  //   }
+  // };
+
   const handleLogin = async () => {
     if (validateForm()) {
       try {
-        const userCredential = await auth().signInWithEmailAndPassword(
-          email,
-          password,
+        const response = await fetch(
+          'https://uatmanufacture.caprconuat.xyz/api/login',
+          {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email, password}),
+          },
         );
-        const user = userCredential.user;
-        dispatch(setUser({email: user.email, uid: user.uid}));
-        showMessage({
-          message: 'Login successful',
-          type: 'success',
-          icon: 'auto',
-        });
-        navigation.replace('MainApp', {userName: email.split('@')[0]});
-      } catch (error) {
-        let message = 'Wrong credentials';
-        if (error.code === 'auth/user-not-found') {
-          message = 'User not registered';
-        } else if (error.code === 'auth/wrong-password') {
-          message = 'Wrong password, try again';
-        } else if (error.code === 'auth/invalid-email') {
-          message = 'Please enter a valid email address.';
+        const data = await response.json();
+
+        if (response.ok && data.status && data.access_token) {
+          dispatch(setUser({email}));
+          dispatch(setToken(data.access_token));
+          await AsyncStorage.setItem('authToken', data.access_token);
+          showMessage({
+            message: 'Login successful',
+            type: 'success',
+            icon: 'auto',
+          });
+          navigation.replace('MainApp', {userName: email.split('@')[0]});
+        } else {
+          let message = data.message || 'Login failed';
+          showMessage({
+            message,
+            type: 'danger',
+            icon: 'auto',
+          });
+          setErrorMessages({
+            ...errorMessages,
+            password: message,
+          });
+          setErrors({
+            ...errors,
+            password: true,
+          });
         }
+      } catch (error) {
         showMessage({
-          message: message,
+          message: 'Network error',
           type: 'danger',
           icon: 'auto',
         });
         setErrorMessages({
           ...errorMessages,
-          password: message,
+          password: 'Network error',
         });
         setErrors({
           ...errors,
