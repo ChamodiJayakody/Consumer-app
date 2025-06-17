@@ -9,13 +9,15 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {RootState} from '../redux/store';
 import {COLORS} from '../theme/colors';
 import {FONTS} from '../theme/fonts';
 import FilterModal from '../components/FilterModal';
 import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {setSelectedManufacturer} from '../redux/manufacturersSlice';
+import {BRAND_NAMES} from '../redux/manufacturersSlice';
 
 const filterOptions = [
   {key: 'all', label: 'All'},
@@ -25,12 +27,47 @@ const filterOptions = [
 
 const BrandPromotionsScreen = ({route}) => {
   const navigation = useNavigation();
-  const {brandId, brandTitle} = route.params;
+  const {brandId, brandTitle, brandName} = route.params;
   const [favorites, setFavorites] = React.useState({});
   const [isFilterVisible, setFilterVisible] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [expandedDesc, setExpandedDesc] = useState({});
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const dispatch = useDispatch();
+
+  const products = useSelector((state: RootState) => {
+    const allProducts = state.manufacturers.products;
+    if (!allProducts || !brandTitle) return [];
+
+    return allProducts.filter(product => {
+      if (!product.sku) return false;
+
+      // Log for debugging
+      console.log('Filtering product:', {
+        sku: product.sku,
+        brandTitle: brandTitle,
+        name: product.name,
+      });
+
+      const [brandCode] = product.sku.split('/');
+      const matches = brandCode === brandTitle;
+
+      // Log matches
+      if (matches) {
+        console.log('Found matching product:', product.name);
+      }
+
+      return matches;
+    });
+  });
+
+  const filteredProducts = products.filter(product => {
+    if (selectedFilter === 'all') return true;
+    if (selectedFilter === 'b1g1') return product.promotionType === 'b1g1';
+    if (selectedFilter === 'discount3')
+      return product.promotionType === 'discount3';
+    return true;
+  });
 
   const toggleDesc = id => {
     setExpandedDesc(prev => ({
@@ -42,16 +79,11 @@ const BrandPromotionsScreen = ({route}) => {
   const toggleFilter = () => {
     setFilterVisible(!isFilterVisible);
   };
-  const promotion = useSelector((state: RootState) =>
-    state.manufacturers.gridCards.find(
-      card => String(card.id) === String(brandId),
-    ),
-  );
-  const products = useSelector(state =>
-    state.manufacturers.products.filter(
-      product => String(product.brandId) === String(brandId),
-    ),
-  );
+
+  const handleManufacturerSelect = (manufacturerId: string) => {
+    dispatch(setSelectedManufacturer(manufacturerId));
+    setFilterVisible(false);
+  };
 
   const toggleFavorite = id => {
     setFavorites(prev => ({
@@ -60,13 +92,9 @@ const BrandPromotionsScreen = ({route}) => {
     }));
   };
 
-  const filteredProducts = products.filter(product => {
-    if (selectedFilter === 'all') return true;
-    if (selectedFilter === 'b1g1') return product.promotionType === 'b1g1';
-    if (selectedFilter === 'discount3')
-      return product.promotionType === 'discount3';
-    return true;
-  });
+  const defaultBrandLogo = require('../assets/images/default-brandlogo.png');
+  const defaultProductImage = require('../assets/images/default-product.png');
+  const defaultBrandImage = require('../assets/images/default-brand.png');
 
   return (
     <View style={styles.container}>
@@ -120,20 +148,12 @@ const BrandPromotionsScreen = ({route}) => {
           <FilterModal
             isVisible={isFilterVisible}
             onClose={toggleFilter}
-            //onSelectManufacturer={handleManufacturerSelect}
+            onSelectManufacturer={handleManufacturerSelect}
           />
         </View>
       </View>
       <ScrollView fadingEdgeLength={20} showsVerticalScrollIndicator={false}>
-        {promotion ? (
-          <View style={styles.card}>
-            <Image source={promotion.image} style={styles.image} />
-            {/* <Text style={styles.cardTitle}>{promotion.title}</Text> */}
-          </View>
-        ) : (
-          <Text>No promotion found for this brand.</Text>
-        )}
-        <Text style={styles.title}>{brandTitle}</Text>
+        <Text style={styles.title}>{brandName}</Text>
 
         <View>
           <FlatList
@@ -182,7 +202,8 @@ const BrandPromotionsScreen = ({route}) => {
                 onPress={() =>
                   navigation.navigate('Product', {
                     productId: item.id,
-                    brandTitle,
+                    brandId: brandId,
+                    brandTitle: brandTitle,
                   })
                 }>
                 {item.previousCost > item.newCost && (
@@ -212,9 +233,12 @@ const BrandPromotionsScreen = ({route}) => {
 
                 <Image
                   source={
-                    Array.isArray(item.image) ? item.image[0] : item.image
+                    Array.isArray(item.image) && item.image.length > 0
+                      ? item.image[0]
+                      : defaultProductImage
                   }
                   style={styles.productImage}
+                  defaultSource={defaultProductImage}
                 />
 
                 <View
@@ -271,6 +295,24 @@ const BrandPromotionsScreen = ({route}) => {
                   </TouchableOpacity>
                 )}
               </TouchableOpacity>
+
+              // <View style={styles.productCard}>
+              //   <Image
+              //     source={defaultProductImage}
+              //     style={styles.productImage}
+              //     defaultSource={defaultProductImage}
+              //   />
+              //   <Text style={styles.productTitle}>{item.name}</Text>
+              //   <Text style={styles.productSku}>{item.sku}</Text>
+              //   {item.previousCost > 0 && (
+              //     <Text style={styles.previousPrice}>
+              //       Rs. {item.previousCost}
+              //     </Text>
+              //   )}
+              //   {item.newCost > 0 && (
+              //     <Text style={styles.newPrice}>Rs. {item.newCost}</Text>
+              //   )}
+              // </View>
             )}
             ListEmptyComponent={<Text>No products for this brand.</Text>}
           />

@@ -36,6 +36,8 @@ const ProductScreen = ({route}) => {
     state.manufacturers.products.find(p => p.id === productId),
   );
 
+  const defaultProductImage = require('../assets/images/default-product.png');
+
   if (!product) {
     return (
       <View style={styles.container}>
@@ -74,7 +76,7 @@ const ProductScreen = ({route}) => {
 
         <View style={styles.imageContainer}>
           <FlatList
-            data={images}
+            data={images?.length ? images : [defaultProductImage]}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -87,9 +89,10 @@ const ProductScreen = ({route}) => {
                   setGalleryVisible(true);
                 }}>
                 <Image
-                  source={item}
+                  source={typeof item === 'string' ? {uri: item} : item}
                   style={styles.image}
                   resizeMode="contain"
+                  defaultSource={defaultProductImage}
                 />
               </TouchableOpacity>
             )}

@@ -18,22 +18,36 @@ import {RootState} from '../redux/store';
 interface FilterModalProps {
   isVisible: boolean;
   onClose: () => void;
+  onSelectManufacturer?: (manufacturerId: string) => void;
 }
 
-const FilterModal = ({isVisible, onClose}: FilterModalProps) => {
+const FilterModal = ({
+  isVisible,
+  onClose,
+  onSelectManufacturer,
+}: FilterModalProps) => {
   const dispatch = useDispatch();
   const selectedManufacturer = useSelector(
     (state: RootState) => state.manufacturers.selectedManufacturer,
   );
 
   const handleManufacturerSelect = (manufacturerId: string) => {
-    dispatch(setSelectedManufacturer(manufacturerId));
-    onClose();
+    console.log('Selecting manufacturer:', manufacturerId); // Add this debug log
+    if (onSelectManufacturer) {
+      onSelectManufacturer(manufacturerId);
+    } else {
+      dispatch(setSelectedManufacturer(manufacturerId));
+      onClose();
+    }
   };
 
   const [searchQuery, setSearchQuery] = React.useState('');
 
   const manufacturers = [
+    {
+      id: '',
+      name: 'All Manufacturers',
+    },
     {
       id: '1',
       name: 'Unilever',
@@ -49,7 +63,6 @@ const FilterModal = ({isVisible, onClose}: FilterModalProps) => {
   const filteredManufacturers = manufacturers.filter(m =>
     m.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
-
 
   return (
     <Modal
@@ -93,10 +106,15 @@ const FilterModal = ({isVisible, onClose}: FilterModalProps) => {
 
         <View style={styles.manufacturerContainer}>
           <Text style={styles.sectionTitle}>SELECT MANUFACTURER</Text>
-          {filteredManufacturers.map((manufacturer, index) => (
+          {filteredManufacturers.map(manufacturer => (
             <React.Fragment key={manufacturer.id}>
               <TouchableOpacity
-                style={styles.manufacturerOption}
+                key={manufacturer.id}
+                style={[
+                  styles.manufacturerOption,
+                  selectedManufacturer === manufacturer.id &&
+                    styles.selectedOption,
+                ]}
                 onPress={() => handleManufacturerSelect(manufacturer.id)}>
                 <Image
                   source={manufacturer.logo}
@@ -130,6 +148,10 @@ const styles = StyleSheet.create({
     height: 28,
     marginRight: 12,
     marginLeft: 30,
+  },
+  selectedOption: {
+    backgroundColor: 'rgba(19, 168, 158, 0.1)', // COLORS.background.primary with opacity
+    borderRadius: 10,
   },
   filterContainer: {
     backgroundColor: COLORS.white,

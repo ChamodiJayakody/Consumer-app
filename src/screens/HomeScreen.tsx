@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useEffect} from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,10 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import {Avatar} from 'react-native-paper';
+import {BRAND_NAMES} from '../redux/manufacturersSlice';
 import {Card} from 'react-native-paper';
 import {FlatList} from 'react-native';
 import {COLORS} from '../theme/colors';
@@ -18,7 +20,10 @@ import FilterModal from '../components/FilterModal';
 import {useSelector, useDispatch} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
 import {RootState} from '../redux/store';
-import {setSelectedManufacturer} from '../redux/manufacturersSlice';
+import {
+  fetchProducts,
+  setSelectedManufacturer,
+} from '../redux/manufacturersSlice';
 
 const HomeScreen = ({route}) => {
   const userName = route.params?.userName || 'User Name';
@@ -27,33 +32,132 @@ const HomeScreen = ({route}) => {
   const [isFilterVisible, setFilterVisible] = React.useState(false);
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const {selectedManufacturer, gridCards, cardsData} = useSelector(
-    (state: RootState) => state.manufacturers,
+  // const {selectedManufacturer, cardsData} = useSelector(
+  //   (state: RootState) => state.manufacturers,
+  // );
+
+  useEffect(() => {
+    console.log('Fetching products...');
+    dispatch(fetchProducts());
+  }, [dispatch]);
+
+  const loading = useSelector(
+    (state: RootState) => state.manufacturers.loading,
   );
+  const error = useSelector((state: RootState) => state.manufacturers.error);
 
   const handleManufacturerSelect = (manufacturerId: string) => {
+    console.log('Selected manufacturer:', manufacturerId);
     dispatch(setSelectedManufacturer(manufacturerId));
-    toggleFilter();
+    setFilterVisible(false);
   };
 
-  const filteredCardsData = useMemo(
-    () =>
-      selectedManufacturer
-        ? cardsData.filter(card => card.manufacturerId === selectedManufacturer)
-        : cardsData,
-    [selectedManufacturer, cardsData],
+  const MANUFACTURER_CODES = {
+    UN: '1', // Unilever
+    HM: '2', // Hemas
+  };
+
+  const selectedManufacturer = useSelector(
+    (state: RootState) => state.manufacturers.selectedManufacturer,
   );
 
-  const filteredGridCards = useMemo(
-    () =>
-      (selectedManufacturer
-        ? gridCards.filter(card => card.manufacturerId === selectedManufacturer)
-        : gridCards
-      ).filter(card =>
+  const defaultBrandLogo = require('../assets/images/default-brandlogo.png');
+  const defaultProductImage = require('../assets/images/default-product.png');
+  const defaultBrandImage = require('../assets/images/default-brand.png');
+
+  const brandLogoMap = {
+    BAB: require('../assets/images/logoBAB.png'),
+    AXE: require('../assets/images/logoAXE.png'),
+    CLO: require('../assets/images/logoCLO.png'),
+    LUX: require('../assets/images/logoLUX.png'),
+    // Add other brand mappings as needed
+  };
+
+  const brandImageMap = {
+    BAB: require('../assets/images/brandBAB.png'),
+    AXE: require('../assets/images/brandAXE.png'),
+    CLO: require('../assets/images/brandCLO.png'),
+    LUX: require('../assets/images/brandLUX.png'),
+    // Add other brand mappings as needed
+  };
+
+  const gridCards = useSelector((state: RootState) => {
+    const products = state.manufacturers.products;
+    if (!products || products.length === 0) return [];
+
+    const brandGroups = products.reduce((acc, product) => {
+      const [brandCode, manufacturerCode] = (product.sku || '').split('/');
+
+      if (!brandCode || !manufacturerCode) return acc;
+
+      const key = `${brandCode}_${manufacturerCode}`;
+      const manufacturerId = MANUFACTURER_CODES[manufacturerCode];
+
+      if (!acc[key]) {
+        acc[key] = {
+          id: key,
+          manufacturerId,
+          title: BRAND_NAMES[brandCode] || brandCode,
+          brandCode: brandCode,
+          image: brandImageMap[brandCode] || defaultBrandImage,
+          logo: brandLogoMap[brandCode] || defaultBrandLogo,
+          description: product.description || '',
+          sku: product.sku,
+        };
+      }
+      return acc;
+    }, {} as Record<string, any>);
+
+    return Object.values(brandGroups);
+  });
+
+  const filteredCardsData = useMemo(() => {
+    const defaultCards = [
+      {
+        id: '1',
+        image: require('../assets/images/card1.png'),
+        manufacturerId: '1',
+      },
+      {
+        id: '2',
+        image: require('../assets/images/card2.png'),
+        manufacturerId: '2',
+      },
+    ];
+
+    return selectedManufacturer
+      ? defaultCards.filter(
+          card => card.manufacturerId === selectedManufacturer,
+        )
+      : defaultCards;
+  }, [selectedManufacturer]);
+
+  const filteredGridCards = useMemo(() => {
+    if (!gridCards) return [];
+
+    let filtered = [...gridCards];
+
+    // Filter by manufacturer if selected
+    if (selectedManufacturer) {
+      console.log('Filtering by manufacturer:', selectedManufacturer);
+      filtered = filtered.filter(card => {
+        console.log('Card manufacturerId:', card.manufacturerId);
+        return card.manufacturerId === selectedManufacturer;
+      });
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(card =>
         card.title.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
-    [selectedManufacturer, gridCards, searchQuery],
-  );
+      );
+    }
+    console.log('Filtered cards:', filtered);
+    return filtered;
+  }, [selectedManufacturer, gridCards, searchQuery]);
+
+  console.log('GridCards:', gridCards);
+  console.log('Filtered Grid Cards:', filteredGridCards);
 
   const toggleFilter = () => {
     setFilterVisible(!isFilterVisible);
@@ -164,104 +268,126 @@ const HomeScreen = ({route}) => {
             <FilterModal
               isVisible={isFilterVisible}
               onClose={toggleFilter}
-              //onSelectManufacturer={handleManufacturerSelect}
+              onSelectManufacturer={manufacturerId => {
+                console.log('Selected manufacturer:', manufacturerId); // Add this debug log
+                dispatch(setSelectedManufacturer(manufacturerId));
+                setFilterVisible(false);
+              }}
             />
           </View>
         </View>
 
-        <ScrollView fadingEdgeLength={20} showsVerticalScrollIndicator={false}>
-          <View style={{}}>
+        {loading ? (
+          <ActivityIndicator size="large" color={COLORS.background.primary} />
+        ) : error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : (
+          <ScrollView
+            fadingEdgeLength={20}
+            showsVerticalScrollIndicator={false}>
+            <View>
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={filteredCardsData}
+                keyExtractor={item => item.id}
+                snapToInterval={370 + 2} // card width + marginRight
+                decelerationRate="fast"
+                //snapToAlignment="center"
+                pagingEnabled={true}
+                renderItem={({item}) => (
+                  <Card style={styles.card}>
+                    <Card.Cover source={item.image} />
+                  </Card>
+                )}
+              />
+            </View>
+
+            <View style={{justifyContent: 'center'}}>
+              <Text
+                style={{
+                  fontFamily: FONTS.title,
+                  textAlign: 'left',
+                  fontSize: 16,
+                  marginVertical: 20,
+                  color: COLORS.text.primary,
+                }}>
+                Ongoing Promotions in{' '}
+                {selectedManufacturer === '1'
+                  ? 'Unilever'
+                  : selectedManufacturer === '2'
+                  ? 'Hemas'
+                  : 'All'}{' '}
+                Brands
+              </Text>
+            </View>
+
             <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              data={filteredCardsData}
+              data={filteredGridCards}
+              numColumns={2}
+              contentContainerStyle={{marginHorizontal: 5}}
+              showsVerticalScrollIndicator={false}
               keyExtractor={item => item.id}
-              snapToInterval={370 + 2} // card width + marginRight
-              decelerationRate="fast"
-              //snapToAlignment="center"
-              pagingEnabled={true}
-              renderItem={({item}) => (
-                <Card style={styles.card}>
-                  <Card.Cover source={item.image} />
-                </Card>
+              columnWrapperStyle={styles.gridRow}
+              ListEmptyComponent={() => (
+                <Text style={styles.emptyText}>
+                  No brands available for this manufacturer
+                </Text>
               )}
-            />
-          </View>
+              renderItem={({item}) => (
+                <TouchableOpacity
+                  style={styles.gridCard}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    navigation.navigate('BrandPromotions', {
+                      brandId: item.id,
+                      brandTitle: item.brandCode, // Pass brandCode for filtering
+                      brandName: item.title, // Pass full brand name for display
+                      manufacturerId: item.manufacturerId,
+                    })
+                  }>
+                  <Card.Cover
+                    source={item.image}
+                    style={styles.gridCardImage}
+                  />
 
-          <View style={{justifyContent: 'center'}}>
-            <Text
-              style={{
-                fontFamily: FONTS.title,
-                textAlign: 'left',
-                fontSize: 16,
-                marginVertical: 20,
-                color: COLORS.text.primary,
-              }}>
-              Ongoing Promotions in{' '}
-              {selectedManufacturer === '1'
-                ? 'Unilever'
-                : selectedManufacturer === '2'
-                ? 'Hemas'
-                : 'All'}{' '}
-              Brands
-            </Text>
-          </View>
+                  <Card style={styles.gridCardContent}>
+                    <View style={styles.titleContainer}>
+                      <Image
+                        source={item.logo}
+                        style={styles.brandLogo}
+                        resizeMode="contain"
+                      />
+                      <Text style={styles.gridCardTitle}>{item.title}</Text>
+                    </View>
 
-          <FlatList
-            data={filteredGridCards}
-            numColumns={2}
-            contentContainerStyle={{marginHorizontal: 5}}
-            showsVerticalScrollIndicator={false}
-            keyExtractor={item => item.id}
-            columnWrapperStyle={styles.gridRow}
-            renderItem={({item}) => (
-              <TouchableOpacity
-                style={styles.gridCard}
-                activeOpacity={0.8}
-                onPress={() =>
-                  navigation.navigate('BrandPromotions', {
-                    brandId: item.id,
-                    brandTitle: item.title,
-                  })
-                }>
-                <Card.Cover source={item.image} style={styles.gridCardImage} />
+                    <View style={styles.subtitleContainer}>
+                      <Text style={styles.gridCardSubtitle}>
+                        Ongoing Promotions in {item.title} brand
+                      </Text>
+                    </View>
+                  </Card>
 
-                <Card style={styles.gridCardContent}>
-                  <View style={styles.titleContainer}>
+                  <TouchableOpacity
+                    style={styles.favoriteIcon}
+                    onPress={() => toggleFavorite(item.id)}>
                     <Image
-                      source={item.logo}
-                      style={styles.brandLogo}
+                      source={require('../assets/images/favourite.png')}
+                      style={{
+                        width: 14,
+                        height: 14,
+                        tintColor: favorites[item.id]
+                          ? COLORS.favourite
+                          : COLORS.text.secondary,
+                      }}
                       resizeMode="contain"
                     />
-                    <Text style={styles.gridCardTitle}>{item.title}</Text>
-                  </View>
-
-                  <View style={styles.subtitleContainer}>
-                    <Text style={styles.gridCardSubtitle}>
-                      Ongoing Promotions in {item.title} brand
-                    </Text>
-                  </View>
-                </Card>
-
-                <TouchableOpacity
-                  style={styles.favoriteIcon}
-                  onPress={() => toggleFavorite(item.id)}>
-                  <Image
-                    source={require('../assets/images/favourite.png')}
-                    style={{
-                      width: 14,
-                      height: 14,
-                      tintColor: favorites[item.id]
-                        ? COLORS.favourite
-                        : COLORS.text.secondary,
-                    }}
-                    resizeMode="contain"
-                  />
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </TouchableOpacity>
-            )}
-          />
-        </ScrollView>
+              )}
+            />
+          </ScrollView>
+        )}
       </View>
     </View>
   );
@@ -430,6 +556,12 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     flex: 1,
     textAlign: 'center',
+  },
+  errorText: {
+    color: COLORS.error,
+    textAlign: 'center',
+    marginTop: 20,
+    fontFamily: FONTS.description,
   },
 });
 
